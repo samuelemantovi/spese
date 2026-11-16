@@ -1452,7 +1452,10 @@ function openSub(id){
     </div>
     ${editingSub && (editingSub.prices||[]).length>1 ? `<p class="hint">Storico prezzi: ${priceHist(editingSub)}</p>` : ''}
     <p class="hint" id="bH"></p>
-    ${editingSub?'<button class="btn danger mt" id="bDel">Elimina abbonamento</button>':''}`;
+    ${editingSub ? (editingSub.to
+        ? `<button class="btn mt" id="bOn">Riattiva abbonamento</button><p class="hint">Disdetto: ultimo addebito a ${ymLabel(editingSub.to).toLowerCase()}.</p>`
+        : `<button class="btn mt" id="bOff">Disdici abbonamento</button><p class="hint">Smette di addebitarlo da ora in poi; gli addebiti passati restano nello storico.</p>`) +
+      '<button class="btn danger mt" id="bDel">Elimina abbonamento</button><p class="hint">Solo se l’avevi inserito per errore: cancella anche tutti gli addebiti dei mesi passati.</p>' : ''}`;
   const drawQ = ()=>{
     body.querySelectorAll('#bQ button').forEach(b=>b.classList.toggle('on', b.dataset.q===selFreq));
     syncSeg(document.getElementById('bQ'));
@@ -1472,7 +1475,19 @@ function openSub(id){
   body.oninput = v;
   body.onclick = e=>{
     const q=e.target.closest('[data-q]'); if(q){ selFreq=q.dataset.q; drawQ(); return; }
-    if(e.target.id==='bDel' && confirm('Eliminare l’abbonamento e tutti i suoi addebiti passati?')){
+    if(e.target.id==='bOff'){
+      // the last charge already made stays; nothing is charged after it
+      const sub = editingSub, now = today();
+      const last = allExp().filter(x=>x.sub===sub.id && x.t<=now).map(x=>ym(x.t)).sort().pop();
+      const msg = last ? `Disdire “${sub.name}”? L’ultimo addebito resta quello di ${ymLabel(last).toLowerCase()}; da lì in poi non verrà più conteggiato.`
+                       : `Disdire “${sub.name}”? Non è ancora stato addebitato nessun mese, quindi non resterà nulla nello storico.`;
+      if(!confirm(msg)) return;
+      closeSheet();
+      withUndo('Abbonamento disdetto', ()=>{ sub.to = last || ymAdd(sub.from || ym(now), -1); });
+      return;
+    }
+    if(e.target.id==='bOn'){ const sub = editingSub; closeSheet(); withUndo('Abbonamento riattivato', ()=>{ sub.to = null; }); return; }
+    if(e.target.id==='bDel' && confirm('Eliminare l’abbonamento? Spariranno anche tutti i suoi addebiti dei mesi passati.\n\nSe l’hai solo disdetto, usa “Disdici abbonamento”: così lo storico resta.')){
       const sid=editingSub.id; closeSheet(); withUndo('Abbonamento eliminato', ()=>{ db.subs=db.subs.filter(x=>x.id!==sid); });
     }
   };
