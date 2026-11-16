@@ -56,6 +56,9 @@
 
 /* ============ base ============ */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* app feel: a long press doesn't select text or open the iOS callout; fields stay editable */
+html{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,system-ui,"SF Pro Text","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;letter-spacing:-.003em}
 body{min-height:100vh;padding:env(safe-area-inset-top) 0 calc(96px + env(safe-area-inset-bottom));overscroll-behavior-y:none;transition:background-color .3s}
 button,input,select{font:inherit;color:inherit}
