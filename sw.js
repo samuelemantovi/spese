@@ -1,5 +1,5 @@
 // Offline cache: network-first so updates arrive, cache as fallback.
-const CACHE = 'spese-v5';
+const CACHE = 'spese-v6';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
