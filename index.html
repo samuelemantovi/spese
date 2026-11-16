@@ -7,8 +7,12 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Spese">
-<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" id="tcLight" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" id="tcDark" content="#000000" media="(prefers-color-scheme: dark)">
+<script>
+// Applica subito il tema salvato (evita il lampo di colore all'avvio)
+(function(){try{var t=localStorage.getItem('spese.theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}})();
+</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -25,7 +29,7 @@
   --r:20px;
 }
 @media (prefers-color-scheme: dark){
-  :root{
+  :root:not([data-theme="light"]){
     --bg:#000; --card:#1a1a19; --card2:#232322;
     --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
     --line:rgba(255,255,255,.09); --grid:#2c2c2a; --axis:#383835;
@@ -33,6 +37,16 @@
     --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#0ca30c;
     --shadow:none;
   }
+}
+:root[data-theme="light"]{color-scheme:light}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#000; --card:#1a1a19; --card2:#232322;
+    --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --line:rgba(255,255,255,.09); --grid:#2c2c2a; --axis:#383835;
+    --accent:#3987e5; --good:#0ca30c;
+    --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#0ca30c;
+    --shadow:none;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"SF Pro Text","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
@@ -230,6 +244,13 @@ section[hidden]{display:none}
     <h2>Abbonamenti</h2>
     <div class="list" id="subsList"></div>
     <p class="hint">Gli abbonamenti vengono conteggiati automaticamente ogni mese nel giorno di addebito, nella categoria Abbonamenti.</p>
+    <h2>Aspetto</h2>
+    <div class="seg" id="sTheme">
+      <button data-t="auto">Automatico</button>
+      <button data-t="light">Chiaro</button>
+      <button data-t="dark">Scuro</button>
+    </div>
+    <p class="hint">“Automatico” segue l'impostazione dell'iPhone.</p>
     <h2>Dati</h2>
     <div class="list">
       <button class="settings-row" id="sExport"><span>Esporta backup (JSON)</span><small>›</small></button>
@@ -628,6 +649,26 @@ document.getElementById('sWipe').onclick = ()=>{
 
 // ---------- boot ----------
 go('home');
+// ---------- tema ----------
+const THEME_KEY = 'spese.theme';
+function getTheme(){ try{ const t=localStorage.getItem(THEME_KEY); return t==='light'||t==='dark'?t:'auto'; }catch(e){ return 'auto'; } }
+function applyTheme(t){
+  const root = document.documentElement;
+  if(t==='auto') delete root.dataset.theme; else root.dataset.theme = t;
+  const L='#f2f2f7', D='#000000';
+  // con tema forzato entrambe le meta usano lo stesso colore; in automatico tornano le due varianti
+  const lm=document.getElementById('tcLight'), dm=document.getElementById('tcDark');
+  if(t==='auto'){ lm.content=L; lm.media='(prefers-color-scheme: light)'; dm.content=D; dm.media='(prefers-color-scheme: dark)'; }
+  else { const c=t==='dark'?D:L; lm.content=c; lm.media='all'; dm.content=c; dm.media='all'; }
+  document.querySelectorAll('#sTheme button').forEach(b=>b.classList.toggle('on', b.dataset.t===t));
+}
+document.getElementById('sTheme').addEventListener('click',e=>{
+  const b=e.target.closest('[data-t]'); if(!b) return;
+  try{ b.dataset.t==='auto' ? localStorage.removeItem(THEME_KEY) : localStorage.setItem(THEME_KEY,b.dataset.t); }catch(err){}
+  applyTheme(b.dataset.t);
+});
+applyTheme(getTheme());
+
 if('serviceWorker' in navigator && location.protocol!=='file:') navigator.serviceWorker.register('sw.js');
 </script>
 </body>
